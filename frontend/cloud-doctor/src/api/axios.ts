@@ -12,6 +12,7 @@ const axiosInstance = axios.create({
 
 axiosInstance.interceptors.request.use(
   (config) => {
+
     // TODO: HTTPS 프로덕션 배포 시 아래 코드 삭제 (쿠키 인증만 사용)
     // 로컬 환경에서 localStorage에 토큰이 있으면 Authorization 헤더 추가
     const token = localStorage.getItem('accessToken');
@@ -39,6 +40,7 @@ axiosInstance.interceptors.response.use(
         sessionStorage.removeItem('username');
         sessionStorage.removeItem('role');
         sessionStorage.removeItem('fullName');
+        
         // TODO: HTTPS 프로덕션 배포 시 아래 2줄 삭제 (쿠키 인증만 사용)
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
@@ -73,6 +75,7 @@ axiosInstance.interceptors.response.use(
           sessionStorage.removeItem('username');
           sessionStorage.removeItem('role');
           sessionStorage.removeItem('fullName');
+          
           // TODO: HTTPS 프로덕션 배포 시 아래 2줄 삭제 (쿠키 인증만 사용)
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');

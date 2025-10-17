@@ -71,6 +71,7 @@ export const adminApi = {
       sessionStorage.removeItem('username');
       sessionStorage.removeItem('role');
       sessionStorage.removeItem('fullName');
+
       // TODO: HTTPS 프로덕션 배포 시 아래 2줄 삭제 (쿠키 인증만 사용)
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
