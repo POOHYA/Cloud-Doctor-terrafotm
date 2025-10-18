@@ -41,8 +41,7 @@ public class AuthController {
     @Value("${cookie.secure}")
     private boolean cookieSecure;
     
-    @Value("${spring.profiles.active:dev}")
-    private String activeProfile;
+
     
     /**
      * 아이디 중복확인
@@ -86,41 +85,37 @@ public class AuthController {
     public ResponseEntity<Map<String, String>> login(@RequestBody LoginRequest loginRequest, 
                                              HttpServletRequest request,
                                              HttpServletResponse response) {
+        // 로그인 시 Redis에서 기존 Access Token 삭제
+        try {
+            authService.removeAccessToken(loginRequest.getUsername());
+        } catch (Exception e) {
+            log.warn("기존 Access Token 삭제 실패: {}", e.getMessage());
+        }
+        
         String userAgent = request.getHeader("User-Agent");
         TokenResponse tokenResponse = authService.login(loginRequest, userAgent);
         
-        // 환경 구분: Origin 헤더 또는 Profile로 판단
+        // 환경 구분: Origin 헤더로 판단
         String origin = request.getHeader("Origin");
-        boolean isLocal = (origin != null && origin.contains("localhost")) || 
-                         "dev".equals(activeProfile) || "local".equals(activeProfile);
+        boolean isLocal = (origin != null && origin.contains("localhost"));
         
-        if (isLocal) {
-            // 로컬 개발환경: SameSite=Lax, Secure=false
-            response.addHeader("Set-Cookie", String.format(
-                "accessToken=%s; Path=/; Max-Age=%d; HttpOnly; SameSite=Lax",
-                tokenResponse.getAccessToken(),
-                (int) (accessTokenExpiration / 1000)
-            ));
-            
-            response.addHeader("Set-Cookie", String.format(
-                "refreshToken=%s; Path=/; Max-Age=%d; HttpOnly; SameSite=Lax",
-                tokenResponse.getRefreshToken(),
-                (int) (refreshTokenExpiration / 1000)
-            ));
-        } else {
-            // 프로덕션 환경: SameSite=None, Secure=true (Cross-Site 지원)
-            response.addHeader("Set-Cookie", String.format(
-                "accessToken=%s; Path=/; Max-Age=%d; HttpOnly; SameSite=None; Secure; Domain=.takustory.site",
-                tokenResponse.getAccessToken(),
-                (int) (accessTokenExpiration / 1000)
-            ));
-            
-            response.addHeader("Set-Cookie", String.format(
-                "refreshToken=%s; Path=/; Max-Age=%d; HttpOnly; SameSite=None; Secure; Domain=.takustory.site",
-                tokenResponse.getRefreshToken(),
-                (int) (refreshTokenExpiration / 1000)
-            ));
-        }
+        // Cookie 객체로 설정
+        Cookie accessCookie = new Cookie("accessToken", tokenResponse.getAccessToken());
+        accessCookie.setHttpOnly(true);
+        accessCookie.setSecure(cookieSecure);
+        accessCookie.setPath("/");
+        accessCookie.setMaxAge((int) (accessTokenExpiration / 1000));
+        response.addCookie(accessCookie);
+        
+        Cookie refreshCookie = new Cookie("refreshToken", tokenResponse.getRefreshToken());
+        refreshCookie.setHttpOnly(true);
+        refreshCookie.setSecure(cookieSecure);
+        refreshCookie.setPath("/");
+        refreshCookie.setMaxAge((int) (refreshTokenExpiration / 1000));
+        response.addCookie(refreshCookie);
+        
+        log.info("쿠키 객체로 설정 완료: accessToken={}, refreshToken={}", 
+            accessCookie.getName(), refreshCookie.getName());
         
         log.info("쿠키 설정 완료: accessToken, refreshToken");
         
@@ -129,7 +124,7 @@ public class AuthController {
         result.put("username", loginRequest.getUsername());
         result.put("role", tokenResponse.getTokenType());
         
-        // 로컬 개발환경에서는 쿠키 대신 Bearer 토큰 사용
+        // 로컬 개발환경에서도 쿠키 인증 사용 (디버깅용으로만 토큰 노출)
         if (isLocal) {
             result.put("accessToken", tokenResponse.getAccessToken());
             result.put("refreshToken", tokenResponse.getRefreshToken());
@@ -161,8 +156,19 @@ public class AuthController {
         }
         
         // 모든 쿠키 삭제
-        response.addHeader("Set-Cookie", "accessToken=; Path=/; Max-Age=0; HttpOnly");
-        response.addHeader("Set-Cookie", "refreshToken=; Path=/; Max-Age=0; HttpOnly");
+        Cookie accessCookie = new Cookie("accessToken", "");
+        accessCookie.setHttpOnly(true);
+        accessCookie.setSecure(cookieSecure);
+        accessCookie.setPath("/");
+        accessCookie.setMaxAge(0);
+        response.addCookie(accessCookie);
+        
+        Cookie refreshCookie = new Cookie("refreshToken", "");
+        refreshCookie.setHttpOnly(true);
+        refreshCookie.setSecure(cookieSecure);
+        refreshCookie.setPath("/");
+        refreshCookie.setMaxAge(0);
+        response.addCookie(refreshCookie);
         
         return ResponseEntity.ok().build();
     }
@@ -192,10 +198,14 @@ public class AuthController {
         String userAgent = request.getHeader("User-Agent");
         TokenResponse tokenResponse = authService.refreshToken(refreshToken, userAgent);
         
+        // 환경 구분: Origin 헤더로 판단
+        String origin = request.getHeader("Origin");
+        boolean isLocal = (origin != null && origin.contains("localhost"));
+        
         // 새 Access Token만 발급
         Cookie accessCookie = new Cookie("accessToken", tokenResponse.getAccessToken());
         accessCookie.setHttpOnly(true);
-        accessCookie.setSecure(true);  // Cross-Site에 필수
+        accessCookie.setSecure(cookieSecure);
         accessCookie.setPath("/");
         accessCookie.setMaxAge((int) (accessTokenExpiration / 1000));
         response.addCookie(accessCookie);
@@ -214,8 +224,8 @@ public class AuthController {
         Map<String, String> result = new HashMap<>();
         result.put("message", "토큰 갱신 성공");
         
-        // 개발 환경에서만 새 Access Token 노출
-        if ("dev".equals(activeProfile) || "local".equals(activeProfile)) {
+        // 로컬 환경에서만 새 Access Token 노출
+        if (isLocal) {
             result.put("accessToken", tokenResponse.getAccessToken());
         }
         

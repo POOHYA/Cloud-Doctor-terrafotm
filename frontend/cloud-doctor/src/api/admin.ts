@@ -5,8 +5,6 @@ interface LoginResponse {
   message: string;
   username: string;
   role: string;
-  accessToken?: string;
-  refreshToken?: string;
 }
 
 export const adminApi = {
@@ -16,12 +14,7 @@ export const adminApi = {
       sessionStorage.setItem('username', data.username);
       sessionStorage.setItem('role', data.role);
       
-      // TODO: HTTPS 프로덕션 배포 시 아래 4줄 삭제 (쿠키 인증만 사용)
-      // 로컬 환경에서 토큰이 응답에 포함된 경우 localStorage에 저장
-      if (data.accessToken) {
-        localStorage.setItem('accessToken', data.accessToken);
-        localStorage.setItem('refreshToken', data.refreshToken || '');
-      }
+
       
       // 사용자 정보 가져와서 fullName 저장
       const userInfo = await axios.get('/api/user/me');
@@ -72,9 +65,7 @@ export const adminApi = {
       sessionStorage.removeItem('role');
       sessionStorage.removeItem('fullName');
 
-      // TODO: HTTPS 프로덕션 배포 시 아래 2줄 삭제 (쿠키 인증만 사용)
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
+
     }
   },
 
