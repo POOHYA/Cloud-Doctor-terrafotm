@@ -44,17 +44,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // 1. 쿠키에서 토큰 추출
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
-            log.info("쿠키 개수: {}, Origin: {}", cookies.length, request.getHeader("Origin"));
             for (Cookie cookie : cookies) {
-                log.info("쿠키: {}={}", cookie.getName(), cookie.getValue().substring(0, Math.min(20, cookie.getValue().length())) + "...");
                 if ("accessToken".equals(cookie.getName())) {
                     jwt = cookie.getValue();
-                    log.info("accessToken 쿠키 발견!");
                     break;
                 }
             }
-        } else {
-            log.info("쿠키 없음, Origin: {}, User-Agent: {}", request.getHeader("Origin"), request.getHeader("User-Agent"));
         }
         
         // 2. 쿠키에 없으면 Authorization 헤더 확인 (Swagger 등을 위해)
@@ -181,7 +176,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      * 인증이 필요한 엔드포인트인지 판별
      */
     private boolean isAuthRequiredEndpoint(String requestURI) {
+        // 로그인/회원가입 등은 인증 불필요
+        if (requestURI.startsWith("/api/auth/")) {
+            return false;
+        }
+        
         return requestURI.startsWith("/admin/") || 
+               requestURI.startsWith("/api/user/") ||
                requestURI.equals("/api/my-external-id");
     }
 }
