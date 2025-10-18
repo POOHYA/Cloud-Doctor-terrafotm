@@ -212,6 +212,13 @@ public class JwtServiceImpl implements JwtService {
             });
     }
     
+    @Override
+    @Transactional
+    public void removeAllRefreshTokensByUsername(String username) {
+        refreshTokenRepository.deleteByUserUsername(username);
+        log.info("사용자 모든 Refresh Token DB에서 삭제: {}", username);
+    }
+    
     private <T> T extractClaim(String token, java.util.function.Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);

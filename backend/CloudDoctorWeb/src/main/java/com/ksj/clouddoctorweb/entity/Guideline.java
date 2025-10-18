@@ -1,5 +1,6 @@
 package com.ksj.clouddoctorweb.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.Getter;
@@ -21,6 +22,7 @@ import java.util.List;
 @Getter
 @Setter
 @EntityListeners(AuditingEntityListener.class)
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Guideline {
     
     @Id
@@ -32,10 +34,12 @@ public class Guideline {
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cloud_provider_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private CloudProvider cloudProvider;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "service_list_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private ServiceList serviceList;
     
     @Column(name = "importance_level", nullable = false)
@@ -61,15 +65,19 @@ public class Guideline {
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private User createdBy;
     
     @OneToMany(mappedBy = "guideline", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private List<GuidelineSolutionImage> solutionImages;
     
     @OneToMany(mappedBy = "guideline", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private List<GuidelineLink> links;
     
     @OneToMany(mappedBy = "guideline", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private List<Checklist> checklists;
     
     @CreatedDate
@@ -80,9 +88,10 @@ public class Guideline {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     
-    public void setImportanceLevelString(String level) {
-        this.importanceLevel = level;
-    }
+    // 사용하지 않는 메서드 제거
+    // public void setImportanceLevelString(String level) {
+    //     this.importanceLevel = level;
+    // }
     
     public enum ImportanceLevel {
         LOW, MEDIUM, HIGH, CRITICAL

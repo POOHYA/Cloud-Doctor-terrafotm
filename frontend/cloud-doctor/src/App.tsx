@@ -8,6 +8,9 @@ import Guide from "./components/Guide";
 import { AdminPage } from "./components/Admin";
 import Checklist from "./components/Checklist";
 import Prowler from "./components/Prowler";
+import Login from "./components/Login";
+import MyPage from "./components/MyPage";
+import AuditCheck from "./components/AuditCheck";
 
 function AppContent() {
   const [showDemoModal, setShowDemoModal] = useState(false);
@@ -25,7 +28,7 @@ function AppContent() {
           <Routes location={location} key={location.pathname}>
             <Route path="/" element={<MainPage />} />
             <Route
-              path="/guide"
+              path="/guide/*"
               element={
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
@@ -36,16 +39,7 @@ function AppContent() {
                   <Guide />
                 </motion.div>
               }
-            >
-              {/* <Route path="account" element={<Account />} />
-              <Route path="compute" element={<Database />} />
-              <Route path="storage" element={<Storage />} />
-              <Route path="network" element={<Network />} />
-              <Route path="logging" element={<Logging />} />
-              <Route path="monitoring" element={<Monitoring />} />
-              <Route path="deployment" element={<Deployment />} />
-              <Route path="encryption" element={<Encryption />} /> */}
-            </Route>
+            ></Route>
             <Route
               path="/prowler"
               element={
@@ -72,6 +66,21 @@ function AppContent() {
                 </motion.div>
               }
             />
+            <Route
+              path="/auditcheck"
+              element={
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <AuditCheck />
+                </motion.div>
+              }
+            />
+            <Route path="/login" element={<Login />} />
+            <Route path="/mypage" element={<MyPage />} />
             <Route path="/admin/*" element={<AdminPage />} />
           </Routes>
         </AnimatePresence>
