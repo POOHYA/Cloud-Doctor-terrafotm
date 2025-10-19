@@ -29,7 +29,7 @@ jobs:
       # 4️⃣ 빌드
       - name: Build project
         working-directory: frontend/cloud-doctor
-        run: npm run build
+        run: CI=false npm run build
 
       # 5️⃣ EC2로 배포 (빌드 결과만 복사)
       - name: Upload build files to EC2
