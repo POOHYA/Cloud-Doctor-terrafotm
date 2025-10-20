@@ -1,6 +1,7 @@
 import axios from "axios";
 
-const AUDIT_API_URL = process.env.REACT_APP_AUDIT_API_URL || "https://localhost:8000";
+const AUDIT_API_URL =
+  process.env.REACT_APP_AUDIT_API_URL || "https://localhost:8000";
 
 export interface AuditRequest {
   account_id: string;
@@ -71,5 +72,15 @@ export const AVAILABLE_CHECKS = [
   { id: "ec2_imdsv2", name: "EC2 IMDSv2 강제", category: "EC2" },
   { id: "ec2_public_ip", name: "EC2 퍼블릭 IP", category: "EC2" },
   { id: "ec2_ami_private", name: "EC2 AMI 프라이빗 설정", category: "EC2" },
-  { id: "ebs_snapshot_private", name: "EBS 스냅샷 프라이빗 설정", category: "EC2" },
+  {
+    id: "ebs_snapshot_private",
+    name: "EBS 스냅샷 프라이빗 설정",
+    category: "EC2",
+  },
+  { id: "eks_irsarole", name: "EKS IRSA 역할 권한 검증", category: "EKS" },
+  {
+    id: "kms_key_rotation",
+    name: "KMS 외부 키 구성 원본 검증",
+    category: "KMS",
+  },
 ];
