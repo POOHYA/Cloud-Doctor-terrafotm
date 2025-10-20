@@ -5,6 +5,8 @@ from app.core.aws_client import AWSClientManager
 from app.checks.iam_checks import IAMAccessKeyAgeCheck, IAMRootAccessKeyCheck, IAMRootMFACheck
 from app.checks.s3_checks import S3PublicAccessCheck, S3EncryptionCheck
 from app.checks.ec2_checks import EC2IMDSv2Check, EC2PublicIPCheck, EC2AMIPrivateCheck, EBSSnapshotPrivateCheck
+from app.checks.eks_checks import EKSIRSARoleCheck
+from app.checks.kms_checks import KMSImportedKeyMaterialCheck
 
 class AuditService:
     def __init__(self):
@@ -21,6 +23,8 @@ class AuditService:
             'ec2_public_ip': EC2PublicIPCheck,
             'ec2_ami_private': EC2AMIPrivateCheck,
             'ebs_snapshot_private': EBSSnapshotPrivateCheck,
+            'eks_irsarole': EKSIRSARoleCheck,
+            'kms_key_rotation': KMSImportedKeyMaterialCheck
         }
     
     async def run_audit(self, account_id: str, role_name: str, checks: List[str] = None, external_id: str = None) -> Dict:

@@ -71,21 +71,30 @@ export default function Checklist() {
   ).length;
   const passRate = totalItems > 0 ? passCount / totalItems : 0;
 
-  let status = "Critical";
-  let statusColor = "from-red-600 to-red-700";
-  if (passRate >= 2 / 3) {
-    status = "Nice";
-    statusColor = "from-green-600 to-green-700";
-  } else if (passRate >= 1 / 3) {
-    status = "Warning";
-    statusColor = "from-yellow-500 to-yellow-600";
-  }
-
   const completedItems = filteredChecklist.filter(
     (item) => answers[item.id] !== undefined
   ).length;
   const completionRate =
     totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
+
+  const isComplete = completionRate === 100;
+
+  let status = "Critical";
+  let statusColor = isComplete
+    ? "from-red-600 to-red-700"
+    : "from-red-800/60 to-red-900/60";
+
+  if (passRate >= 2 / 3) {
+    status = "Nice";
+    statusColor = isComplete
+      ? "from-green-600 to-green-700"
+      : "from-green-800/60 to-green-900/60";
+  } else if (passRate >= 1 / 3) {
+    status = "Warning";
+    statusColor = isComplete
+      ? "from-yellow-500 to-yellow-600"
+      : "from-yellow-700/60 to-yellow-800/60";
+  }
 
   const resetAnswers = () => setAnswers({});
 
@@ -199,7 +208,7 @@ export default function Checklist() {
                 <th className="border border-primary p-4 text-left font-semibold">
                   항목
                 </th>
-                <th className="border border-primary p-4 text-center font-semibold">
+                <th className="border border-primary p-4 text-left font-semibold">
                   체크
                 </th>
               </tr>
