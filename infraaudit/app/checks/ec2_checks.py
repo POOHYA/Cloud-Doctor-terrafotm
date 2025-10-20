@@ -219,3 +219,5 @@ class EBSSnapshotPrivateCheck(BaseCheck):
             results.append(self.get_result('ERROR', 'N/A', str(e)))
         
         return {'results': results, 'raw': raw, 'guideline_id': 6}
+    
+    
