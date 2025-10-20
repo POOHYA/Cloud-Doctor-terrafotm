@@ -183,7 +183,7 @@ export const adminApi = {
   },
 
   getServicesByProvider: async (providerId: number): Promise<any[]> => {
-    const { data } = await axios.get(`/api/services/provider/${providerId}`);
+    const { data } = await axios.get(`/admin/services/provider/${providerId}`);
     return data;
   },
 
@@ -228,6 +228,26 @@ export const adminApi = {
     await axios.post("/admin/guidelines", guidelineData);
   },
 
+  getGuideline: async (id: number): Promise<any> => {
+    const { data } = await axios.get(`/admin/guidelines/${id}`);
+    return data;
+  },
+
+  getChecklist: async (id: number): Promise<any> => {
+    const { data } = await axios.get(`/admin/checklists/${id}`);
+    return data;
+  },
+
+  updateChecklist: async (
+    id: number,
+    checklistData: {
+      title: string;
+      isActive: boolean;
+    }
+  ): Promise<void> => {
+    await axios.put(`/admin/checklists/${id}`, checklistData);
+  },
+
   updateGuideline: async (
     id: number,
     guidelineData: {
@@ -245,5 +265,14 @@ export const adminApi = {
     }
   ): Promise<void> => {
     await axios.put(`/admin/guidelines/${id}`, guidelineData);
+  },
+
+  uploadGuidelineImage: async (guidelineId: string, formData: FormData): Promise<{imageUrl: string}> => {
+    const { data } = await axios.post(`/admin/guidelines/${guidelineId}/images`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return data;
   },
 };

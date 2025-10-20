@@ -1,18 +1,18 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '../hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
-import { adminApi } from '../api/admin';
+import { useState, useEffect } from "react";
+import { useAuth } from "../hooks/useAuth";
+import { useNavigate } from "react-router-dom";
+import { adminApi } from "../api/admin";
 
 export default function MyPage() {
   const { adminUser } = useAuth();
   const navigate = useNavigate();
   const [userInfo, setUserInfo] = useState<any>(null);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [checklists, setChecklists] = useState<any[]>([]);
 
   useEffect(() => {
@@ -27,7 +27,7 @@ export default function MyPage() {
       const info = await adminApi.getUserInfo();
       setUserInfo(info);
     } catch (error) {
-      console.error('사용자 정보 로드 실패:', error);
+      console.error("사용자 정보 로드 실패:", error);
     }
   };
 
@@ -36,44 +36,48 @@ export default function MyPage() {
       const data = await adminApi.getMyChecklists();
       setChecklists(data);
     } catch (error) {
-      console.error('체크리스트 로드 실패:', error);
+      console.error("체크리스트 로드 실패:", error);
     }
   };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     if (currentPassword === newPassword) {
-      setError('기존 비밀번호와 같습니다. 다른 비밀번호를 입력해주세요.');
+      setError("기존 비밀번호와 같습니다. 다른 비밀번호를 입력해주세요.");
       return;
     }
 
     if (newPassword !== newPasswordConfirm) {
-      setError('새 비밀번호가 일치하지 않습니다.');
+      setError("새 비밀번호가 일치하지 않습니다.");
       return;
     }
 
     try {
       await adminApi.changePassword(currentPassword, newPassword);
-      setSuccess('비밀번호가 변경되었습니다.');
-      setCurrentPassword('');
-      setNewPassword('');
-      setNewPasswordConfirm('');
-      setTimeout(() => setSuccess(''), 3000);
+      setSuccess("비밀번호가 변경되었습니다.");
+      setCurrentPassword("");
+      setNewPassword("");
+      setNewPasswordConfirm("");
+      setTimeout(() => setSuccess(""), 3000);
     } catch (error) {
-      setError('비밀번호 변경에 실패했습니다.');
+      setError("비밀번호 변경에 실패했습니다.");
     }
   };
 
   if (!adminUser) {
     return (
       <div className="max-w-4xl mx-auto mt-8 p-6 bg-primary-dark/50 backdrop-blur-xl rounded-2xl shadow-2xl border border-primary text-center">
-        <h2 className="text-2xl font-bold mb-4 text-beige">로그인이 필요합니다</h2>
-        <p className="text-primary-light mb-6">마이페이지를 사용하려면 로그인해주세요.</p>
+        <h2 className="text-2xl font-bold mb-4 text-beige">
+          로그인이 필요합니다
+        </h2>
+        <p className="text-primary-light mb-6">
+          마이페이지를 사용하려면 로그인해주세요.
+        </p>
         <button
-          onClick={() => navigate('/login')}
+          onClick={() => navigate("/login")}
           className="px-6 py-3 bg-gradient-to-r from-primary to-accent text-white rounded-lg hover:from-primary-light hover:to-accent shadow-lg transition-all"
         >
           로그인하기
@@ -86,11 +90,13 @@ export default function MyPage() {
     <div className="max-w-4xl mx-auto mt-8 p-6">
       <div className="bg-primary-dark/50 backdrop-blur-xl rounded-2xl shadow-2xl border border-primary p-6 mb-6">
         <h1 className="text-3xl font-bold mb-4 text-beige">마이페이지</h1>
-        
+
         {userInfo && (
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-primary-light">사용자명:</span>
+              <span className="font-semibold text-primary-light">
+                사용자명:
+              </span>
               <span className="text-beige">{userInfo.username}</span>
             </div>
             <div className="flex items-center gap-2">
@@ -113,13 +119,13 @@ export default function MyPage() {
 
       <div className="bg-primary-dark/50 backdrop-blur-xl rounded-2xl shadow-2xl border border-primary p-6 mb-6">
         <h2 className="text-xl font-bold mb-4 text-beige">비밀번호 변경</h2>
-        
+
         {success && (
           <div className="mb-4 p-3 bg-green-900/20 border-l-4 border-green-500 rounded-r-lg text-green-400 text-sm">
             {success}
           </div>
         )}
-        
+
         {!isChangingPassword ? (
           <button
             onClick={() => setIsChangingPassword(true)}
@@ -169,8 +175,8 @@ export default function MyPage() {
                 type="button"
                 onClick={() => {
                   setIsChangingPassword(false);
-                  setError('');
-                  setSuccess('');
+                  setError("");
+                  setSuccess("");
                 }}
                 className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 shadow-md transition-all"
               >
@@ -178,36 +184,6 @@ export default function MyPage() {
               </button>
             </div>
           </form>
-        )}
-      </div>
-
-      <div className="bg-primary-dark/50 backdrop-blur-xl rounded-2xl shadow-2xl border border-primary p-6">
-        <h2 className="text-xl font-bold mb-4 text-beige">저장된 체크리스트</h2>
-        {checklists.length === 0 ? (
-          <p className="text-primary-light text-center py-8">
-            아직 저장된 체크리스트가 없습니다.
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {checklists.map((checklist) => (
-              <div key={checklist.id} className="p-4 bg-primary-dark/30 border border-primary rounded-lg hover:bg-primary-dark/50 cursor-pointer transition-all"
-                   onClick={() => navigate(`/checklist?edit=${checklist.id}`)}>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-semibold text-lg text-beige">{checklist.resultName}</h3>
-                    <p className="text-sm text-primary-light">
-                      {new Date(checklist.createdAt).toLocaleString('ko-KR')}
-                    </p>
-                  </div>
-                  {checklist.isCompleted && (
-                    <span className="px-3 py-1 bg-green-900/30 text-green-400 border border-green-500 rounded-full text-sm">
-                      완료
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
         )}
       </div>
     </div>

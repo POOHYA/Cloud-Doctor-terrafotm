@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  useLocation,
+  Navigate,
+} from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
@@ -11,6 +17,7 @@ import Prowler from "./components/Prowler";
 import Login from "./components/Login";
 import MyPage from "./components/MyPage";
 import AuditCheck from "./components/AuditCheck";
+import About from "./components/About";
 
 function AppContent() {
   const [showDemoModal, setShowDemoModal] = useState(false);
@@ -82,7 +89,9 @@ function AppContent() {
             />
             <Route path="/login" element={<Login />} />
             <Route path="/mypage" element={<MyPage />} />
+            <Route path="/about" element={<About />} />
             <Route path="/admin/*" element={<AdminPage />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </AnimatePresence>
       </main>
