@@ -180,23 +180,32 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
     
     /**
-     * 인증이 필요한 엔드포인트인지 판별
+     * 인증이 필요한 엔드포인트 판별
+     * 기본적으로 대부분의 API는 인증이 필요하고,
+     * 명시적으로 공개된 경로만 예외로 둔다.
      */
     private boolean isAuthRequiredEndpoint(String requestURI) {
-        // 로그인/회원가입 등은 인증 불필요
-        if (requestURI.startsWith("/api/auth/") || 
+        // 1. 완전 공개 경로 (JWT 검증 불필요)
+        if (requestURI.startsWith("/api/auth/") ||
             requestURI.startsWith("/health") ||
-            requestURI.startsWith("/api/guidelines") ||
-            requestURI.startsWith("/api/providers") ||
-            requestURI.startsWith("/api/services/") ||
-            requestURI.equals("/api/users") ||
             requestURI.startsWith("/swagger-ui/") ||
-            requestURI.startsWith("/v3/api-docs/")) {
+            requestURI.startsWith("/v3/api-docs/") ||
+            requestURI.startsWith("/swagger-resources/") ||
+            requestURI.startsWith("/webjars/")) {
             return false;
         }
-        
-        return requestURI.startsWith("/admin/") || 
-               requestURI.startsWith("/api/user/") ||
-               requestURI.equals("/api/my-external-id");
+
+        // 2. 비로그인 접근 허용 경로
+        if (requestURI.startsWith("/api/guidelines") ||
+            requestURI.startsWith("/api/providers") ||
+            requestURI.startsWith("/api/services") ||
+            requestURI.equals("/api/users")) {
+            return false;
+        }
+
+        // 3. 관리자, 사용자 개인 정보 등은 인증 필수
+        return requestURI.startsWith("/admin/") ||
+            requestURI.startsWith("/api/user/") ||
+            requestURI.equals("/api/my-external-id");
     }
 }
