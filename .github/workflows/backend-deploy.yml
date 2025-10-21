@@ -75,10 +75,10 @@ jobs:
               export REFRESH_TOKEN_EXPIRATION=${{ secrets.REFRESH_TOKEN_EXPIRATION }}
               export COOKIE_SECURE=true
 
-              docker load -i /home/ubuntu/cloud-doctor-backend.tar
-              docker stop cloud-doctor-backend || true
-              docker rm cloud-doctor-backend || true
-              docker run -d -p 9090:9090 \
+              sudo docker load -i /home/ubuntu/cloud-doctor-backend.tar
+              sudo docker stop cloud-doctor-backend || true
+              sudo docker rm cloud-doctor-backend || true
+              sudo docker run -d -p 9090:9090 \
                 -e PGSQL_URL=\$PGSQL_URL \
                 -e PGSQL_USERNAME=\$PGSQL_USERNAME \
                 -e PGSQL_PASSWORD=\$PGSQL_PASSWORD \
