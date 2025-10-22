@@ -57,7 +57,9 @@ public class SecurityConfig {
             "https://back.takustory.site",
             "https://www.cloud-doctor.site",
             "https://cloud-doctor.site",
-            "https://api.cloud-doctor.site"
+            "https://api.cloud-doctor.site",
+            "https://webs.takustory.site",
+            "https://web.takustory.site"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("*"));

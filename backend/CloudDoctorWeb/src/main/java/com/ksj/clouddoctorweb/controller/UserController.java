@@ -73,7 +73,12 @@ public class UserController {
             // UUID 일치 확인
             if (!expectedUuid.equals(request.getExternalId())) {
                 log.warn("계정 불일치: expected={}, provided={}", expectedUuid, request.getExternalId());
-                return ResponseEntity.badRequest().body("계정 불일치: AWS Role의 ExternalId를 확인해주세요");
+                return ResponseEntity.badRequest().body(
+                    "🔑 External ID가 일치하지 않습니다.\n" +
+                    "• '확인&복사' 버튼을 눌러 올바른 UUID를 사용해주세요\n" +
+                    "• AWS Role의 Trust Policy에 동일한 UUID가 설정되었는지 확인해주세요\n" +
+                    "• 다른 계정의 UUID를 사용하고 있을 수 있습니다"
+                );
             }
             
             // TODO: 진행 중인 점검 확인 로직 추가
@@ -102,7 +107,10 @@ public class UserController {
             return ResponseEntity.ok(pythonResponse.getBody());
         } catch (Exception e) {
             log.error("인프라 점검 시작 실패", e);
-            return ResponseEntity.badRequest().body("점검 시작에 실패했습니다: " + e.getMessage());
+            
+            // 사용자 친화적인 에러 메시지로 변환
+            String userFriendlyMessage = convertToUserFriendlyMessage(e.getMessage());
+            return ResponseEntity.badRequest().body(userFriendlyMessage);
         }
     }
     
@@ -200,5 +208,46 @@ public class UserController {
             log.error("체크리스트 수정 실패", e);
             throw new RuntimeException("체크리스트 수정에 실패했습니다");
         }
+    }
+    
+    /**
+     * AWS 에러를 사용자 친화적인 메시지로 변환
+     */
+    private String convertToUserFriendlyMessage(String errorMessage) {
+        if (errorMessage == null) {
+            return "점검 시작에 실패했습니다.";
+        }
+        
+        // AssumeRole 권한 부족
+        if (errorMessage.contains("is not authorized to perform: sts:AssumeRole")) {
+            return "🚫 AWS 역할 접근 권한이 없습니다.\n" +
+                   "• AWS 계정 ID가 올바른지 확인해주세요\n" +
+                   "• CloudDoctorAuditRole이 생성되었는지 확인해주세요\n" +
+                   "• Trust Policy에 올바른 External ID가 설정되었는지 확인해주세요";
+        }
+        
+        // 역할을 찾을 수 없음
+        if (errorMessage.contains("NoSuchEntity") || errorMessage.contains("does not exist")) {
+            return "🔍 CloudDoctorAuditRole을 찾을 수 없습니다.\n" +
+                   "• AWS 계정 ID가 올바른지 확인해주세요\n" +
+                   "• '점검계정 생성 가이드'를 참고하여 Role을 생성해주세요";
+        }
+        
+        // External ID 불일치
+        if (errorMessage.contains("ExternalId")) {
+            return "🔑 External ID가 일치하지 않습니다.\n" +
+                   "• '확인&복사' 버튼을 눌러 올바른 UUID를 사용해주세요\n" +
+                   "• AWS Role의 Trust Policy에 동일한 UUID가 설정되었는지 확인해주세요";
+        }
+        
+        // 일반적인 AWS 에러
+        if (errorMessage.contains("AWS") || errorMessage.contains("Amazon")) {
+            return "☁️ AWS 연결 오류가 발생했습니다.\n" +
+                   "• 입력한 정보를 다시 한 번 확인해주세요\n" +
+                   "• 잠시 후 다시 시도해주세요";
+        }
+        
+        // 기본 메시지
+        return "점검 시작에 실패했습니다. 입력 정보를 확인하고 다시 시도해주세요.";
     }
 }

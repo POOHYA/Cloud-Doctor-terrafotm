@@ -1,3 +1,7 @@
+import os
+from dotenv import load_dotenv
+load_dotenv()  # .env 파일 로드
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api import audit
@@ -12,6 +16,9 @@ app.add_middleware(
         "https://localhost:3000",
         "https://localhost:3001",
         "https://web.takustory.site",
+        "https://webs.takustory.site",
+        "https://back.takustory.site",
+        "https://audit.takustory.site",
         "https://api.cloud-doctor.site",
         "https://www.cloud-doctor.site",
         "https://cloud-doctor.site"
