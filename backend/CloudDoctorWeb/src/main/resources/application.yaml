@@ -57,4 +57,4 @@ aws:
 # infraaudit 인프라 보안 점검 FastAPI 서비스 주소
 infraaudit:
   api:
-    url: ${INFRAAUDIT_API_URL}  # 기본값: 로컬
+    url: ${INFRAAUDIT_API_URL}  # 운영 서버

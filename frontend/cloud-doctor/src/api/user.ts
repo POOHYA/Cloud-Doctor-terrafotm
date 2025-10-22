@@ -42,4 +42,9 @@ export const userApi = {
     const { data } = await axios.get("/api/user/me");
     return data;
   },
+
+  getUuid: async () => {
+    const { data } = await axios.get("/api/user/uuid");
+    return data;
+  },
 };

@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from "./axios";
 
 const AUDIT_API_URL =
   process.env.REACT_APP_AUDIT_API_URL || "https://localhost:8000";
@@ -42,8 +42,13 @@ export interface AuditResponse {
 export const auditApi = {
   startAudit: async (request: AuditRequest): Promise<AuditResponse> => {
     const { data } = await axios.post<AuditResponse>(
-      `${AUDIT_API_URL}/api/audit/start`,
-      request
+      `/api/user/audit/start`,
+      {
+        accountId: request.account_id,
+        roleName: request.role_name,
+        externalId: request.external_id,
+        checks: request.checks
+      }
     );
     return data;
   },

@@ -48,6 +48,9 @@ export default function AuditCheck() {
   const [result, setResult] = useState<AuditResponse | null>(null);
   const [error, setError] = useState("");
   const [showGuideModal, setShowGuideModal] = useState(false);
+  const [userUuid, setUserUuid] = useState("");
+  const [loadingUuid, setLoadingUuid] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
 
   // useEffect(() => {
   //   const fetchUserInfo = async () => {
@@ -71,6 +74,24 @@ export default function AuditCheck() {
         : [...prev, checkId]
     );
   };
+  const fetchAndCopyUuid = async () => {
+    setLoadingUuid(true);
+    try {
+      const response = await userApi.getUuid();
+      setUserUuid(response);
+      setExternalId(response);
+      
+      // 클립보드에 복사
+      await navigator.clipboard.writeText(response);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (err: any) {
+      setError("UUID 조회/복사 실패: " + (err.response?.data || err.message));
+    } finally {
+      setLoadingUuid(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -89,7 +110,30 @@ export default function AuditCheck() {
       console.log("First result check_id:", response.results?.[0]?.check_id);
       setResult(response);
     } catch (err: any) {
-      setError(err.response?.data?.detail || err.message || "점검 실패");
+      console.error("에러 전체:", err);
+      console.error("에러 응답:", err.response);
+      console.error("에러 데이터:", err.response?.data);
+      
+      // 백엔드에서 온 에러 메시지 처리
+      let errorMessage = "점검 실패";
+      
+      if (err.response?.data) {
+        // 백엔드에서 문자열로 보낸 경우
+        if (typeof err.response.data === 'string') {
+          errorMessage = err.response.data;
+        }
+        // JSON 객체로 보낸 경우
+        else if (err.response.data.detail) {
+          errorMessage = err.response.data.detail;
+        }
+        else if (err.response.data.message) {
+          errorMessage = err.response.data.message;
+        }
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -109,6 +153,19 @@ export default function AuditCheck() {
             점검계정 생성 가이드
           </button>
         </div>
+
+        {/* 성공/에러 메시지 - 헤더 바로 아래 */}
+        {result && (
+          <div className="bg-green-500/20 border border-green-500 text-white p-4 rounded mb-6">
+            ✅ 점검 완료! 스크롤해서 결과를 확인해주세요.
+          </div>
+        )}
+        
+        {error && (
+          <div className="bg-red-500/20 border border-red-500 text-white p-4 rounded mb-6">
+            ❌ {error}
+          </div>
+        )}
 
         <form
           onSubmit={handleSubmit}
@@ -138,18 +195,31 @@ export default function AuditCheck() {
               />
             </div>
 
-            {/* <div>
-              <label className="block text-beige mb-2">
-                External ID (자동 입력됨)
-              </label>
-              <input
-                type="text"
-                value={maskedExternalId}
-                readOnly
-                placeholder="로그인 후 자동 입력"
-                className="w-full px-4 py-2 rounded bg-white/10 text-white placeholder-white/50 cursor-not-allowed"
-              />
-            </div> */}
+            <div>
+              <label className="block text-beige mb-2">External ID *</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={externalId}
+                  onChange={(e) => setExternalId(e.target.value)}
+                  placeholder="clouddoctor-your-uuid"
+                  required
+                  className="flex-1 px-4 py-2 rounded bg-white/20 text-white placeholder-white/50"
+                />
+                <button
+                  type="button"
+                  onClick={fetchAndCopyUuid}
+                  disabled={loadingUuid}
+                  className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
+                    copySuccess
+                      ? "bg-green-500 text-white"
+                      : "bg-accent text-white hover:bg-accent/80"
+                  } disabled:opacity-50`}
+                >
+                  {loadingUuid ? "로딩..." : copySuccess ? "복사완료!" : "확인&복사"}
+                </button>
+              </div>
+            </div>
 
             <div>
               <div className="flex justify-between items-center mb-2">
@@ -191,12 +261,6 @@ export default function AuditCheck() {
             </button>
           </div>
         </form>
-
-        {error && (
-          <div className="bg-red-500/20 border border-red-500 text-white p-4 rounded mb-6">
-            ❌ {error}
-          </div>
-        )}
 
         {result && (
           <div className="bg-white/10 backdrop-blur-md rounded-lg p-6">
@@ -460,6 +524,34 @@ export default function AuditCheck() {
                   </div>
                   <p>스택 상태: CREATE_COMPLETE</p>
                 </div>
+                
+                {userUuid && (
+                  <div className="bg-accent/10 border border-accent p-4 rounded-lg">
+                    <h3 className="font-bold text-lg mb-3 text-accent">
+                      🔑 내 External ID (UUID)
+                    </h3>
+                    <div className="bg-gray-100 rounded p-4 mb-2">
+                      <div className="flex items-center justify-between">
+                        <code className="text-sm font-mono bg-gray-200 px-2 py-1 rounded">
+                          {userUuid}
+                        </code>
+                        <button
+                          onClick={() => copyToClipboard(userUuid)}
+                          className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                            copySuccess
+                              ? "bg-green-500 text-white"
+                              : "bg-accent text-white hover:bg-accent/80"
+                          }`}
+                        >
+                          {copySuccess ? "복사완료!" : "복사"}
+                        </button>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      위 UUID를 AWS IAM Role의 Trust Policy에서 ExternalId로 사용하세요.
+                    </p>
+                  </div>
+                )}
                 <div className="bg-beige p-4 rounded-lg">
                   <h3 className="font-bold text-lg mb-3">
                     8️⃣ 리소스 탭에서 IAM Role 확인
