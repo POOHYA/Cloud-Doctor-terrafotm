@@ -112,9 +112,7 @@ const GuideItem: React.FC<{ data: GuideItemProps }> = ({ data }) => {
               {data.checkSteps}
             </pre>
           </div>
-        </div>
 
-        <aside className="space-y-4">
           <div className="p-5 bg-gradient-to-br from-emerald-900/20 to-green-900/20 rounded-2xl shadow-md border border-emerald-600/30">
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-base font-bold text-emerald-400 flex items-center gap-2">
@@ -134,16 +132,9 @@ const GuideItem: React.FC<{ data: GuideItemProps }> = ({ data }) => {
               ))}
             </ul>
           </div>
+        </div>
 
-          {data.sideEffect && (
-            <div className="p-5 bg-gradient-to-br from-amber-900/20 to-yellow-900/20 rounded-2xl shadow-md border border-amber-600/30">
-              <h4 className="text-base font-bold text-amber-400 mb-3 flex items-center gap-2">
-                ⚡ Side Effect
-              </h4>
-              <p className="text-slate-300">{data.sideEffect}</p>
-            </div>
-          )}
-
+        <aside className="space-y-4">
           {data.links && data.links.length > 0 && (
             <div className="p-5 bg-gradient-to-br from-purple-900/20 to-pink-900/20 rounded-2xl shadow-md border border-purple-600/30">
               <h4 className="text-base font-bold text-purple-400 mb-3 flex items-center gap-2">
@@ -164,6 +155,15 @@ const GuideItem: React.FC<{ data: GuideItemProps }> = ({ data }) => {
                   </li>
                 ))}
               </ul>
+            </div>
+          )}
+
+          {data.sideEffect && (
+            <div className="p-5 bg-gradient-to-br from-amber-900/20 to-yellow-900/20 rounded-2xl shadow-md border border-amber-600/30">
+              <h4 className="text-base font-bold text-amber-400 mb-3 flex items-center gap-2">
+                ⚡ Side Effect
+              </h4>
+              <p className="text-slate-300">{data.sideEffect}</p>
             </div>
           )}
         </aside>

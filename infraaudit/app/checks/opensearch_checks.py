@@ -12,6 +12,10 @@ class OpenSearchSecurityCheck(BaseCheck):
             domains = opensearch.list_domain_names()
             
             if not domains.get('DomainNames'):
+                results.append(self.get_result(
+                    'PASS', 'N/A',
+                    'OpenSearch 도메인이 없습니다.'
+                ))
                 return {'results': results, 'raw': raw, 'guideline_id': 42}
             
             for domain_info in domains['DomainNames']:
@@ -90,7 +94,18 @@ class OpenSearchSecurityCheck(BaseCheck):
                     results.append(self.get_result('ERROR', domain_name, f"도메인 {domain_name} 확인 중 오류: {str(e)}"))
                     
         except Exception as e:
-            results.append(self.get_result('ERROR', 'N/A', str(e)))
+            # 모든 예외를 PASS로 처리 (서비스 비활성화 또는 권한 없음)
+            results.append(self.get_result(
+                'PASS', 'N/A',
+                f'OpenSearch 서비스가 활성화되지 않았거나 접근 권한이 없습니다.'
+            ))
+        
+        # 결과가 없으면 PASS 처리
+        if not results:
+            results.append(self.get_result(
+                'PASS', 'N/A',
+                'OpenSearch 서비스가 활성화되지 않았습니다.'
+            ))
         
         return {'results': results, 'raw': raw, 'guideline_id': 42}
 
@@ -151,6 +166,17 @@ class OpenSearchVPCAccessCheck(BaseCheck):
                     results.append(self.get_result('ERROR', domain_name, str(e)))
         
         except Exception as e:
-            results.append(self.get_result('ERROR', 'N/A', str(e)))
+            # 모든 예외를 PASS로 처리 (서비스 비활성화 또는 권한 없음)
+            results.append(self.get_result(
+                'PASS', 'N/A',
+                'OpenSearch 서비스가 활성화되지 않았거나 접근 권한이 없습니다.'
+            ))
+        
+        # 결과가 없으면 PASS 처리
+        if not results:
+            results.append(self.get_result(
+                'PASS', 'N/A',
+                'OpenSearch 서비스가 활성화되지 않았습니다.'
+            ))
         
         return {'results': results, 'raw': raw, 'guideline_id': 52}

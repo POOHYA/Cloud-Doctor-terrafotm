@@ -14,7 +14,7 @@ class CognitoTokenExpirationCheck(BaseCheck):
             
             if not user_pools['UserPools']:
                 results.append(self.get_result(
-                    '양호', 'N/A',
+                    'PASS', 'N/A',
                     "Cognito 사용자 풀이 존재하지 않습니다."
                 ))
                 return {'results': results, 'raw': raw, 'guideline_id': 40}
@@ -80,7 +80,7 @@ class CognitoTokenExpirationCheck(BaseCheck):
                             
                             if issues:
                                 results.append(self.get_result(
-                                    '취약', f"{pool_name}/{client_name}",
+                                    'FAIL', f"{pool_name}/{client_name}",
                                     f"앱 클라이언트 {client_name}의 토큰 유효기간이 권장값을 초과합니다: {', '.join(issues)}",
                                     {
                                         'pool_id': pool_id,
@@ -93,7 +93,7 @@ class CognitoTokenExpirationCheck(BaseCheck):
                                 ))
                             else:
                                 results.append(self.get_result(
-                                    '양호', f"{pool_name}/{client_name}",
+                                    'PASS', f"{pool_name}/{client_name}",
                                     f"앱 클라이언트 {client_name}의 토큰 유효기간이 적절히 설정되어 있습니다.",
                                     {
                                         'pool_id': pool_id,

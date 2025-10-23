@@ -20,7 +20,7 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              AWS: "arn:aws:iam::<saas계정 ID>user/<saas계정 유저>"
+              "AWS": "arn:aws:iam::346448660196:user/clouddoctor"
             Action: "sts:AssumeRole"
             Condition:
               StringEquals:
