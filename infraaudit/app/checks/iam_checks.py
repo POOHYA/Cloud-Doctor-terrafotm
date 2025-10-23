@@ -96,10 +96,13 @@ class IAMPassRoleWildcardResourceCheck(BaseCheck):
         
         try:
             entities = []
+            all_users = []
+            all_roles = []
             
             # 사용자 정책 수집
             users = iam.list_users()['Users']
             for user in users:
+                all_users.append(user['UserName'])
                 user_name = user['UserName']
                 # 인라인 정책
                 inline_policies = iam.list_user_policies(UserName=user_name)['PolicyNames']
@@ -128,6 +131,7 @@ class IAMPassRoleWildcardResourceCheck(BaseCheck):
             # 역할 정책 수집
             roles = iam.list_roles()['Roles']
             for role in roles:
+                all_roles.append(role['RoleName'])
                 role_name = role['RoleName']
                 # 인라인 정책
                 inline_policies = iam.list_role_policies(RoleName=role_name)['PolicyNames']
@@ -153,10 +157,9 @@ class IAMPassRoleWildcardResourceCheck(BaseCheck):
                         'policy_document': policy_doc['PolicyVersion']['Document']
                     })
             
-            if not entities:
-                return {'results': results, 'raw': raw, 'guideline_id': 14}
+            # 엔티티별로 PassRole 권한 확인
+            entity_passrole_map = {}
             
-            # 각 정책에서 iam:PassRole 검사
             for entity in entities:
                 entity_type = entity['type']
                 entity_name = entity['name']
@@ -169,6 +172,10 @@ class IAMPassRoleWildcardResourceCheck(BaseCheck):
                     'policy_name': policy_name,
                     'policy_document': policy_document
                 })
+                
+                entity_key = f"{entity_type}:{entity_name}"
+                if entity_key not in entity_passrole_map:
+                    entity_passrole_map[entity_key] = {'has_passrole': False, 'resources': [], 'has_wildcard': False}
                 
                 has_wildcard_passrole = False
                 passrole_resources = []
@@ -193,43 +200,90 @@ class IAMPassRoleWildcardResourceCheck(BaseCheck):
                         )
                         
                         if has_passrole:
+                            entity_passrole_map[entity_key]['has_passrole'] = True
                             passrole_resources.extend(resources)
+                            entity_passrole_map[entity_key]['resources'].extend(resources)
                             # Resource가 "*" 또는 광범위한 패턴인지 확인
                             for resource in resources:
                                 if (resource == "*" or 
                                     resource == "arn:aws:iam::*:role/*" or
                                     resource.endswith(":role/*")):
                                     has_wildcard_passrole = True
+                                    entity_passrole_map[entity_key]['has_wildcard'] = True
+            
+            # 각 엔티티별로 결과 생성
+            for entity_key, passrole_info in entity_passrole_map.items():
+                entity_type, entity_name = entity_key.split(':', 1)
                 
-                # PassRole 권한이 있는 경우만 결과에 포함
-                if passrole_resources:
-                    if has_wildcard_passrole:
-                        results.append(self.get_result(
-                            'FAIL', f"{entity_type}:{entity_name}",
-                            f"{entity_type} {entity_name}의 정책 {policy_name}에서 iam:PassRole의 Resource가 '*' 또는 광범위하게 설정되어 있습니다.",
-                            {
-                                'entity_type': entity_type,
-                                'entity_name': entity_name,
-                                'policy_name': policy_name,
-                                'passrole_resources': passrole_resources,
-                                'has_wildcard_resource': True
-                            }
-                        ))
-                    else:
-                        results.append(self.get_result(
-                            'PASS', f"{entity_type}:{entity_name}",
-                            f"{entity_type} {entity_name}의 정책 {policy_name}에서 iam:PassRole의 Resource가 적절히 제한되어 있습니다.",
-                            {
-                                'entity_type': entity_type,
-                                'entity_name': entity_name,
-                                'policy_name': policy_name,
-                                'passrole_resources': passrole_resources,
-                                'has_wildcard_resource': False
-                            }
-                        ))
+                if not passrole_info['has_passrole']:
+                    results.append(self.get_result(
+                        'PASS', entity_key,
+                        f"{entity_type} {entity_name}에 PassRole 권한이 없습니다.",
+                        {
+                            'entity_type': entity_type,
+                            'entity_name': entity_name,
+                            'has_passrole': False
+                        }
+                    ))
+                elif passrole_info['has_wildcard']:
+                    results.append(self.get_result(
+                        'FAIL', entity_key,
+                        f"{entity_type} {entity_name}에서 iam:PassRole의 Resource가 '*' 또는 광범위하게 설정되어 있습니다.",
+                        {
+                            'entity_type': entity_type,
+                            'entity_name': entity_name,
+                            'passrole_resources': passrole_info['resources'],
+                            'has_wildcard_resource': True
+                        }
+                    ))
+                else:
+                    results.append(self.get_result(
+                        'PASS', entity_key,
+                        f"{entity_type} {entity_name}에서 iam:PassRole의 Resource가 적절히 제한되어 있습니다.",
+                        {
+                            'entity_type': entity_type,
+                            'entity_name': entity_name,
+                            'passrole_resources': passrole_info['resources'],
+                            'has_wildcard_resource': False
+                        }
+                    ))
+            
+            # 사용자/역할이 없는 경우
+            if not all_users and not all_roles:
+                results.append(self.get_result(
+                    'PASS', 'N/A',
+                    'IAM 사용자 및 역할이 없습니다.',
+                    {'total_users': 0, 'total_roles': 0}
+                ))
+            # 정책이 없는 경우
+            elif not entity_passrole_map:
+                results.append(self.get_result(
+                    'PASS', 'N/A',
+                    f'총 {len(all_users)}명의 사용자와 {len(all_roles)}개의 역할에 PassRole 권한이 없습니다.',
+                    {'total_users': len(all_users), 'total_roles': len(all_roles)}
+                ))
+            
+            # 결과가 없으면 기본 메시지
+            if not results:
+                results.append(self.get_result(
+                    'PASS', 'N/A',
+                    f'점검 완료: {len(all_users)}명 사용자, {len(all_roles)}개 역할 확인',
+                    {'total_users': len(all_users), 'total_roles': len(all_roles)}
+                ))
                 
         except Exception as e:
-            results.append(self.get_result('ERROR', 'N/A', str(e)))
+            results.append(self.get_result(
+                'ERROR', 'N/A', 
+                f'IAM PassRole 점검 오류: {str(e)}',
+                {'error': str(e)}
+            ))
+        
+        # 최종 안전장치
+        if not results:
+            results.append(self.get_result(
+                'ERROR', 'N/A',
+                'IAM PassRole 점검 결과를 생성할 수 없습니다.'
+            ))
         
         return {'results': results, 'raw': raw, 'guideline_id': 14}
     

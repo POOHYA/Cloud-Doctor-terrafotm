@@ -48,6 +48,7 @@ export default function AuditCheck() {
   const [result, setResult] = useState<AuditResponse | null>(null);
   const [error, setError] = useState("");
   const [showGuideModal, setShowGuideModal] = useState(false);
+  const [showManualCheckModal, setShowManualCheckModal] = useState(false);
   const [userUuid, setUserUuid] = useState("");
   const [loadingUuid, setLoadingUuid] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
@@ -80,7 +81,7 @@ export default function AuditCheck() {
       const response = await userApi.getUuid();
       setUserUuid(response);
       setExternalId(response);
-      
+
       // 클립보드에 복사
       await navigator.clipboard.writeText(response);
       setCopySuccess(true);
@@ -89,6 +90,16 @@ export default function AuditCheck() {
       setError("UUID 조회/복사 실패: " + (err.response?.data || err.message));
     } finally {
       setLoadingUuid(false);
+    }
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (err) {
+      console.error("복사 실패:", err);
     }
   };
 
@@ -113,26 +124,25 @@ export default function AuditCheck() {
       console.error("에러 전체:", err);
       console.error("에러 응답:", err.response);
       console.error("에러 데이터:", err.response?.data);
-      
+
       // 백엔드에서 온 에러 메시지 처리
       let errorMessage = "점검 실패";
-      
+
       if (err.response?.data) {
         // 백엔드에서 문자열로 보낸 경우
-        if (typeof err.response.data === 'string') {
+        if (typeof err.response.data === "string") {
           errorMessage = err.response.data;
         }
         // JSON 객체로 보낸 경우
         else if (err.response.data.detail) {
           errorMessage = err.response.data.detail;
-        }
-        else if (err.response.data.message) {
+        } else if (err.response.data.message) {
           errorMessage = err.response.data.message;
         }
       } else if (err.message) {
         errorMessage = err.message;
       }
-      
+
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -146,12 +156,20 @@ export default function AuditCheck() {
           <h1 className="text-4xl font-bold mb-8 text-white">
             🔍 AWS 보안 점검
           </h1>
-          <button
-            onClick={() => setShowGuideModal(true)}
-            className="px-4 py-2 bg-beige/20 text-beige border border-beige rounded hover:bg-beige hover:text-primary-dark transition-colors font-medium"
-          >
-            점검계정 생성 가이드
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowManualCheckModal(true)}
+              className="px-4 py-2 bg-white/10 text-white border border-white/30 rounded hover:bg-white/20 transition-colors font-medium"
+            >
+              자동점검 불가 항목
+            </button>
+            <button
+              onClick={() => setShowGuideModal(true)}
+              className="px-4 py-2 bg-beige/20 text-beige border border-white/30 rounded hover:bg-white/20 transition-colors font-medium"
+            >
+              점검 IAM role 생성 가이드
+            </button>
+          </div>
         </div>
 
         {/* 성공/에러 메시지 - 헤더 바로 아래 */}
@@ -160,7 +178,7 @@ export default function AuditCheck() {
             ✅ 점검 완료! 스크롤해서 결과를 확인해주세요.
           </div>
         )}
-        
+
         {error && (
           <div className="bg-red-500/20 border border-red-500 text-white p-4 rounded mb-6">
             ❌ {error}
@@ -178,7 +196,7 @@ export default function AuditCheck() {
                 type="text"
                 value={accountId}
                 onChange={(e) => setAccountId(e.target.value)}
-                placeholder="123456789012"
+                placeholder="점검할 AWS 계정 ID(숫자12자리)"
                 required
                 className="w-full px-4 py-2 rounded bg-white/20 text-white placeholder-white/50"
               />
@@ -189,9 +207,9 @@ export default function AuditCheck() {
               <input
                 type="text"
                 value={roleName}
-                onChange={(e) => setRoleName(e.target.value)}
+                readOnly
                 placeholder="CloudDoctorAuditRole"
-                className="w-full px-4 py-2 rounded bg-white/20 text-white placeholder-white/50"
+                className="w-full px-4 py-2 rounded bg-white/10 text-white/70 placeholder-white/50 cursor-not-allowed"
               />
             </div>
 
@@ -216,7 +234,11 @@ export default function AuditCheck() {
                       : "bg-accent text-white hover:bg-accent/80"
                   } disabled:opacity-50`}
                 >
-                  {loadingUuid ? "로딩..." : copySuccess ? "복사완료!" : "확인&복사"}
+                  {loadingUuid
+                    ? "로딩..."
+                    : copySuccess
+                    ? "복사완료!"
+                    : "확인&복사"}
                 </button>
               </div>
             </div>
@@ -397,6 +419,78 @@ export default function AuditCheck() {
           </div>
         )}
 
+        {showManualCheckModal && (
+          <div
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            onClick={() => setShowManualCheckModal(false)}
+          >
+            <div
+              className="bg-primary-light rounded-lg p-8 w-full max-w-5xl max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold text-primary-dark">
+                  📋 자동점검 불가 항목
+                </h2>
+                <button
+                  onClick={() => setShowManualCheckModal(false)}
+                  className="text-gray-500 hover:text-gray-700 text-2xl"
+                >
+                  &times;
+                </button>
+              </div>
+              <div className="space-y-6 text-gray-700">
+                <p className="text-gray-700 mb-4">
+                  다음 항목들은 AWS API로 자동 점검이 불가능하여 수동으로 확인이
+                  필요합니다.
+                </p>
+                <div className="bg-beige p-4 rounded-lg">
+                  <h3 className="font-bold text-lg mb-3">
+                    1️⃣ IAM 패스워드 정책
+                  </h3>
+                  <ul className="list-disc ml-6 mt-2 space-y-1">
+                    <li>AWS 콘솔에서 IAM → 계정 설정 → 암호 정책 확인 필요</li>
+                  </ul>
+                </div>
+                <div className="bg-beige p-4 rounded-lg">
+                  <h3 className="font-bold text-lg mb-3">2️⃣ MFA 활성화 여부</h3>
+                  <ul className="list-disc ml-6 mt-2 space-y-1">
+                    <li>
+                      루트 계정 및 IAM 사용자의 MFA 설정 상태 수동 확인 필요
+                    </li>
+                  </ul>
+                </div>
+                <div className="bg-beige p-4 rounded-lg">
+                  <h3 className="font-bold text-lg mb-3">
+                    3️⃣ CloudTrail 로그 무결성 검증
+                  </h3>
+                  <ul className="list-disc ml-6 mt-2 space-y-1">
+                    <li>로그 파일 검증 활성화 여부 콘솔에서 확인 필요</li>
+                  </ul>
+                </div>
+                <div className="bg-beige p-4 rounded-lg">
+                  <h3 className="font-bold text-lg mb-3">
+                    4️⃣ 네트워크 ACL 규칙
+                  </h3>
+                  <ul className="list-disc ml-6 mt-2 space-y-1">
+                    <li>
+                      VPC 네트워크 ACL의 인바운드/아웃바운드 규칙 수동 검토 필요
+                    </li>
+                  </ul>
+                </div>
+                <div className="bg-beige p-4 rounded-lg">
+                  <h3 className="font-bold text-lg mb-3">
+                    5️⃣ 리소스 태그 정책 준수
+                  </h3>
+                  <ul className="list-disc ml-6 mt-2 space-y-1">
+                    <li>조직의 태그 정책 준수 여부는 수동 확인 필요</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {showGuideModal && (
           <div
             className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
@@ -408,7 +502,7 @@ export default function AuditCheck() {
             >
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-2xl font-bold text-primary-dark">
-                  점검계정 역할(CloudDoctorAuditRole) 생성 가이드
+                  점검용 IAM role 생성 가이드
                 </h2>
                 <div className="flex items-center gap-3">
                   <a
@@ -429,7 +523,7 @@ export default function AuditCheck() {
               <div className="space-y-6 text-gray-700">
                 <div className="bg-beige p-4 rounded-lg">
                   <h3 className="font-bold text-lg mb-3">
-                    1️⃣ CloudFormation 접속
+                    1️⃣ External ID 확인 & 복사
                   </h3>
                   <div className="bg-gray-100 rounded p-4 mb-2">
                     <img
@@ -438,24 +532,64 @@ export default function AuditCheck() {
                       className="w-full rounded"
                     />
                   </div>
-                  <p>AWS 콘솔 상단 검색창에서 CloudFormation 검색</p>
+                  <ul className="list-disc ml-6 mt-2 space-y-1">
+                    <li>보안 점검 탭에서 External ID 확인 & 복사 버튼 클릭</li>
+                  </ul>
                 </div>
                 <div className="bg-beige p-4 rounded-lg">
-                  <h3 className="font-bold text-lg mb-3">2️⃣ 새 리소스 생성</h3>
+                  <h3 className="font-bold text-lg mb-3">
+                    2️⃣ yaml파일 다운 및 수정
+                  </h3>
                   <div className="bg-gray-100 rounded p-4 mb-2">
                     <img
                       src="/img/rolecreate/role-2.png"
+                      alt="CloudFormation 접속"
+                      className="w-full rounded"
+                    />
+                  </div>
+                  <ul className="list-disc ml-6 mt-2 space-y-1">
+                    <li>오른쪽 상단의 yaml파일 다운 버튼 클릭</li>
+                    <li>
+                      파일을 연 후 27줄의 &lt;고객-ExternalId&gt;를 1에서 복사한
+                      ID로 수정
+                    </li>
+                  </ul>
+                </div>
+                <div className="bg-beige p-4 rounded-lg">
+                  <h3 className="font-bold text-lg mb-3">
+                    3️⃣ CloudFormation 접속
+                  </h3>
+                  <div className="bg-gray-100 rounded p-4 mb-2">
+                    <img
+                      src="/img/rolecreate/role-3.png"
+                      alt="CloudFormation 접속"
+                      className="w-full rounded"
+                    />
+                  </div>
+                  <ul className="list-disc ml-6 mt-2 space-y-1">
+                    <li>AWS 서비스를 사용하는 reagion 확인</li>
+                    <li>AWS 콘솔 상단 검색창에서 CloudFormation 검색</li>
+                    <li>다음 클릭</li>
+                  </ul>
+                </div>
+                <div className="bg-beige p-4 rounded-lg">
+                  <h3 className="font-bold text-lg mb-3">4️⃣ 새 리소스 생성</h3>
+                  <div className="bg-gray-100 rounded p-4 mb-2">
+                    <img
+                      src="/img/rolecreate/role-4.png"
                       alt="새 리소스 생성"
                       className="w-full rounded"
                     />
                   </div>
-                  <p>스택 생성 → 새 리소스 사용(표준) 선택</p>
+                  <ul className="list-disc ml-6 mt-2 space-y-1">
+                    <li>스택 생성 → 새 리소스 사용(표준) 선택</li>
+                  </ul>
                 </div>
                 <div className="bg-beige p-4 rounded-lg">
-                  <h3 className="font-bold text-lg mb-3">3️⃣ 스택생성</h3>
+                  <h3 className="font-bold text-lg mb-3">5️⃣ 스택생성</h3>
                   <div className="bg-gray-100 rounded p-4 mb-2">
                     <img
-                      src="/img/rolecreate/role-3.png"
+                      src="/img/rolecreate/role-5.png"
                       alt="스택생성"
                       className="w-full rounded"
                     />
@@ -471,11 +605,11 @@ export default function AuditCheck() {
                 </div>
                 <div className="bg-beige p-4 rounded-lg">
                   <h3 className="font-bold text-lg mb-3">
-                    4️⃣ 스택 세부 정보 지정
+                    6️⃣ 스택 세부 정보 지정
                   </h3>
                   <div className="bg-gray-100 rounded p-4 mb-2">
                     <img
-                      src="/img/rolecreate/role-4.png"
+                      src="/img/rolecreate/role-6.png"
                       alt="스택 세부 정보 지정"
                       className="w-full rounded"
                     />
@@ -486,10 +620,10 @@ export default function AuditCheck() {
                   </ul>
                 </div>
                 <div className="bg-beige p-4 rounded-lg">
-                  <h3 className="font-bold text-lg mb-3">5️⃣ 스택 옵션 구성</h3>
+                  <h3 className="font-bold text-lg mb-3">7️⃣ 스택 옵션 구성</h3>
                   <div className="bg-gray-100 rounded p-4 mb-2">
                     <img
-                      src="/img/rolecreate/role-5.png"
+                      src="/img/rolecreate/role-7.png"
                       alt="스택 옵션 구성"
                       className="w-full rounded"
                     />
@@ -500,10 +634,10 @@ export default function AuditCheck() {
                   </ul>
                 </div>
                 <div className="bg-beige p-4 rounded-lg">
-                  <h3 className="font-bold text-lg mb-3">6️⃣ 검토 & 생성</h3>
+                  <h3 className="font-bold text-lg mb-3">8️⃣ 검토 & 생성</h3>
                   <div className="bg-gray-100 rounded p-4 mb-2">
                     <img
-                      src="/img/rolecreate/role-6.png"
+                      src="/img/rolecreate/role-8.png"
                       alt="검토 & 생성"
                       className="w-full rounded"
                     />
@@ -514,17 +648,33 @@ export default function AuditCheck() {
                   </ul>
                 </div>
                 <div className="bg-beige p-4 rounded-lg">
-                  <h3 className="font-bold text-lg mb-3">7️⃣ 생성 완료 확인</h3>
+                  <h3 className="font-bold text-lg mb-3"> 9️⃣ 생성 완료 확인</h3>
                   <div className="bg-gray-100 rounded p-4 mb-2">
                     <img
-                      src="/img/rolecreate/role-7.png"
+                      src="/img/rolecreate/role-9.png"
                       alt="생성 완료 확인"
                       className="w-full rounded"
                     />
                   </div>
-                  <p>스택 상태: CREATE_COMPLETE</p>
+                  <ul className="list-disc ml-6 mt-2 space-y-1">
+                    <li>스택 상태: CREATE_COMPLETE</li>
+                  </ul>
                 </div>
-                
+                <div className="bg-beige p-4 rounded-lg">
+                  <h3 className="font-bold text-lg mb-3">
+                    🔟 리소스 탭에서 IAM Role 확인
+                  </h3>
+                  <div className="bg-gray-100 rounded p-4 mb-2">
+                    <img
+                      src="/img/rolecreate/role-10.png"
+                      alt="IAM Role 확인"
+                      className="w-full rounded"
+                    />
+                  </div>
+                  <ul className="list-disc ml-6 mt-2 space-y-1">
+                    <li>IAM → 역할 → CloudDoctorAuditRole</li>
+                  </ul>
+                </div>
                 {userUuid && (
                   <div className="bg-accent/10 border border-accent p-4 rounded-lg">
                     <h3 className="font-bold text-lg mb-3 text-accent">
@@ -548,23 +698,11 @@ export default function AuditCheck() {
                       </div>
                     </div>
                     <p className="text-sm text-gray-600">
-                      위 UUID를 AWS IAM Role의 Trust Policy에서 ExternalId로 사용하세요.
+                      위 UUID를 AWS IAM Role의 Trust Policy에서 ExternalId로
+                      사용하세요.
                     </p>
                   </div>
                 )}
-                <div className="bg-beige p-4 rounded-lg">
-                  <h3 className="font-bold text-lg mb-3">
-                    8️⃣ 리소스 탭에서 IAM Role 확인
-                  </h3>
-                  <div className="bg-gray-100 rounded p-4 mb-2">
-                    <img
-                      src="/img/rolecreate/role-8.png"
-                      alt="IAM Role 확인"
-                      className="w-full rounded"
-                    />
-                  </div>
-                  <p>IAM → 역할 → CloudDoctorAuditRole</p>
-                </div>
               </div>
             </div>
           </div>

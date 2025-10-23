@@ -97,7 +97,7 @@ class CloudTrailLoggingCheck(BaseCheck):
                 trail_status = cloudtrail.get_trail_status(Name=trail_name)
                 is_logging = trail_status.get('IsLogging', False)
                 
-                # 추적 설정
+                # organization 추적 설정 
                 is_multi_region = trail.get('IsMultiRegionTrail', False)
                 is_organization_trail = trail.get('IsOrganizationTrail', False)
                 

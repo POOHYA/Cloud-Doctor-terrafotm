@@ -113,7 +113,7 @@ const Header: React.FC = () => {
                       navigate("/auditcheck");
                     } else {
                       alert("로그인이 필요한 서비스입니다.");
-                      navigate("/login");
+                      navigate("/login", { state: { from: location } });
                     }
                   }}
                   className={`relative py-2 px-1 transition-all duration-300 group align-baseline inline-block ${
@@ -154,6 +154,7 @@ const Header: React.FC = () => {
             ) : (
               <Link
                 to="/login"
+                state={{ from: location }}
                 onClick={() => window.scrollTo(0, 0)}
                 className="px-4 py-2 rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600 hover:text-white transition-all"
               >
@@ -235,7 +236,7 @@ const Header: React.FC = () => {
                       navigate("/auditcheck");
                     } else {
                       alert("로그인이 필요한 서비스입니다.");
-                      navigate("/login");
+                      navigate("/login", { state: { from: location } });
                     }
                     setIsMenuOpen(false);
                   }}
@@ -274,6 +275,7 @@ const Header: React.FC = () => {
                 <li>
                   <Link
                     to="/login"
+                    state={{ from: location }}
                     className="block text-slate-300"
                     onClick={() => {
                       window.scrollTo(0, 0);

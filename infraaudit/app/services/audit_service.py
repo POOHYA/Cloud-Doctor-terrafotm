@@ -17,7 +17,7 @@ from app.checks.ssm_check import IAMSSMCommandPolicyCheck, SSMDocumentPublicAcce
 from app.checks.guardduty_checks import GuardDutyStatusCheck
 from app.checks.cognito_check import CognitoTokenExpirationCheck
 from app.checks.cloudformation_check import IAMRoleCloudFormationPassRoleCheck
-from app.checks.opensearch_checks import OpenSearchSecurityCheck
+from app.checks.opensearch_checks import OpenSearchSecurityCheck, OpenSearchVPCAccessCheck
 from app.checks.elasticbeanstalk_check import ElasticBeanstalkCredentialsCheck
 from app.checks.redshift_checks import RedshiftEncryptionCheck
 from app.checks.glue_check import IAMGluePassRoleCheck
@@ -54,6 +54,7 @@ class AuditService:
             'IAMGluePassRoleCheck': IAMGluePassRoleCheck,
             'GuardDutyStatusCheck': GuardDutyStatusCheck,
             'OpenSearchSecurityCheck': OpenSearchSecurityCheck,
+            'OpenSearchVPCAccessCheck': OpenSearchVPCAccessCheck,
             'OrganizationsSCPCheck': OrganizationsSCPCheck,
             'RDSPublicAccessibilityCheck': RDSPublicAccessibilityCheck,
             'SNSAccessPolicyCheck': SNSAccessPolicyCheck,
