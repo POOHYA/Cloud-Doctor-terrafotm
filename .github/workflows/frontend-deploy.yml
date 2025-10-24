@@ -73,8 +73,13 @@ jobs:
               # 새 빌드 파일 배포
               sudo rm -rf /var/www/html/*
               cd /home/ubuntu
-              tar -xzf build.tar.gz -C /tmp/
-              sudo cp -r /tmp/* /var/www/html/
+              
+              # 임시 디렉토리 생성 및 압축 해제
+              mkdir -p ~/temp_build
+              tar -xzf build.tar.gz -C ~/temp_build/
+              
+              # 파일 복사 및 권한 설정
+              sudo cp -r ~/temp_build/* /var/www/html/
               sudo chown -R www-data:www-data /var/www/html
               sudo chmod -R 755 /var/www/html
               
@@ -83,5 +88,5 @@ jobs:
               
               # 임시 파일 정리
               rm -f /home/ubuntu/build.tar.gz
-              rm -rf /tmp/*
+              rm -rf ~/temp_build
             EOF
