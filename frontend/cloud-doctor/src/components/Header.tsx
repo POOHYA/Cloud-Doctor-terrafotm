@@ -58,7 +58,7 @@ const Header: React.FC = () => {
                       : "text-slate-300 hover:text-cyan-400"
                   }`}
                 >
-                  가이드
+                  가이드라인
                   <span
                     className={`absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-cyan-500 to-blue-600 transform transition-transform duration-300 ${
                       location.pathname === "/guide"
@@ -208,10 +208,10 @@ const Header: React.FC = () => {
                   className="block text-cyan-400 hover:text-cyan-300 transition-colors"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  가이드
+                  가이드라인
                 </Link>
               </li>
-              <li>
+              {/* <li>
                 <Link
                   to="/prowler"
                   className="block text-emerald-400 hover:text-emerald-300 transition-colors"
@@ -219,7 +219,7 @@ const Header: React.FC = () => {
                 >
                   Prowler
                 </Link>
-              </li>
+              </li> */}
               <li>
                 <Link
                   to="/checklist"

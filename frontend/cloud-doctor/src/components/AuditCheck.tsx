@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { auditApi, AuditResponse, AVAILABLE_CHECKS } from "../api/audit";
 import { userApi } from "../api/user";
 
@@ -39,6 +40,8 @@ const CHECK_TO_SERVICE: Record<string, string> = {
 };
 
 export default function AuditCheck() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [accountId, setAccountId] = useState("");
   const [roleName, setRoleName] = useState("CloudDoctorAuditRole");
   const [externalId, setExternalId] = useState("");
@@ -54,6 +57,14 @@ export default function AuditCheck() {
   const [userUuid, setUserUuid] = useState("");
   const [loadingUuid, setLoadingUuid] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+
+  useEffect(() => {
+    const isLoggedIn = !!sessionStorage.getItem("username");
+    if (!isLoggedIn) {
+      alert("로그인이 필요한 서비스입니다.");
+      navigate("/login", { state: { from: location } });
+    }
+  }, [navigate, location]);
 
   // useEffect(() => {
   //   const fetchUserInfo = async () => {

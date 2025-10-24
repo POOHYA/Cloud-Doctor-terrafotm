@@ -115,7 +115,6 @@ export default function Checklist() {
         <h1 className="text-4xl font-bold mb-8 text-white">
           🛡️ AWS 보안 체크리스트
         </h1>
-        <p>서비스 선택</p>
         {/* 서비스 선택 버튼 */}
 
         <div className="flex flex-wrap gap-2 mb-6">

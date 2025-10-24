@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useLocation } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import { userApi } from "../../api/user";
 
@@ -121,7 +121,7 @@ const GuideItem: React.FC<{ data: GuideItemProps }> = ({ data }) => {
               <button
                 onClick={() => setShowImageModal(true)}
                 className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-to-br from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white text-sm font-medium shadow-lg hover:shadow-xl transition-all"
-                title="캡쳐가이드"
+                title="캡쳐가이드라인"
               >
                 🌌 캡쳐
               </button>
@@ -314,6 +314,7 @@ const GuideItem: React.FC<{ data: GuideItemProps }> = ({ data }) => {
 export default function GuideDetail() {
   const { service, id } = useParams<{ service: string; id?: string }>();
   const location = useLocation();
+  const navigate = useNavigate();
   const [articles, setArticles] = useState<GuideItemProps[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -413,7 +414,7 @@ export default function GuideDetail() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-8 flex items-center justify-center">
         <div className="text-white text-xl space-y-4">
-          <div>해당 서비스의 가이드가 준비 중입니다.</div>
+          <div>해당 서비스의 가이드라인이 준비 중입니다.</div>
           <div className="text-sm bg-red-900/50 p-4 rounded">
             <div>DEBUG INFO:</div>
             <div>Service: {service}</div>
@@ -429,7 +430,28 @@ export default function GuideDetail() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-8">
-      <div className="flex gap-8 max-w-7xl mx-auto p-8">
+      <div className="max-w-7xl mx-auto p-8">
+        <button
+          onClick={() => navigate("/guide")}
+          className="mb-6 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-700/50 hover:bg-slate-700 text-slate-300 hover:text-white transition-all"
+        >
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+          가이드라인 목록
+        </button>
+      </div>
+      <div className="flex gap-8 max-w-7xl mx-auto px-8">
         {!id && (
           <aside className="hidden md:block w-64 flex-shrink-0">
             <div className="sticky top-24 bg-slate-800/80 backdrop-blur-xl rounded-2xl shadow-lg p-6 border border-slate-700">
