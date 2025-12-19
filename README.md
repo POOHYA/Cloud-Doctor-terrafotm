@@ -73,6 +73,10 @@ AWS 보안 사고를 줄이고 클라우드 보안 생태계에 기여하는 것
 
 ## 🕵️ 프로젝트 구조
 
+### 시스템 아키텍처
+
+<img src="./assets/img/architecture.png" alt="architecture" width="1000px" />
+
 ### 1️⃣ AWS 침해사고 사례 분석
 
 <img src="./assets/img/침해사고분류.png" alt="AWS 침해사고 분류" width="1000px" />
