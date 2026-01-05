@@ -1,6 +1,9 @@
 name: Frontend Deploy to Private Subnet
 
 on:
+  # 8:40 워크플로
+  schedule:
+    - cron: "40 23 * * *"
   workflow_dispatch:
   pull_request:
     branches:
