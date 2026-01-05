@@ -1,35 +1,43 @@
-import { useState } from 'react';
+import { useState } from "React";
 
 interface AdminRegisterProps {
   onSwitchToLogin: () => void;
 }
 
 export default function AdminRegister({ onSwitchToLogin }: AdminRegisterProps) {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (password !== confirmPassword) {
-      alert('비밀번호가 일치하지 않습니다.');
+      alert("비밀번호가 일치하지 않습니다.");
       return;
     }
 
-    if (localStorage.getItem('admin_' + username)) {
-      alert('이미 존재하는 아이디입니다.');
-      return;
+    try {
+      if (localStorage.getItem("admin_" + username)) {
+        alert("이미 존재하는 아이디입니다.");
+        return;
+      }
+
+      localStorage.setItem(
+        "admin_" + username,
+        JSON.stringify({
+          username,
+          password,
+          createdAt: new Date().toISOString(),
+        })
+      );
+
+      alert("회원가입이 완료되었습니다.");
+      onSwitchToLogin();
+    } catch (error) {
+      console.error("회원가입 중 오류 발생:", error);
+      alert("회원가입 중 오류가 발생했습니다. 다시 시도해주세요.");
     }
-
-    localStorage.setItem('admin_' + username, JSON.stringify({
-      username,
-      password,
-      createdAt: new Date().toISOString()
-    }));
-
-    alert('회원가입이 완료되었습니다.');
-    onSwitchToLogin();
   };
 
   return (
@@ -57,7 +65,9 @@ export default function AdminRegister({ onSwitchToLogin }: AdminRegisterProps) {
           />
         </div>
         <div className="mb-6">
-          <label className="block text-sm font-medium mb-2">비밀번호 확인</label>
+          <label className="block text-sm font-medium mb-2">
+            비밀번호 확인
+          </label>
           <input
             type="password"
             value={confirmPassword}
@@ -74,7 +84,7 @@ export default function AdminRegister({ onSwitchToLogin }: AdminRegisterProps) {
         </button>
       </form>
       <p className="mt-4 text-center text-sm">
-        이미 계정이 있으신가요?{' '}
+        이미 계정이 있으신가요?{" "}
         <button
           onClick={onSwitchToLogin}
           className="text-blue-500 hover:underline"
