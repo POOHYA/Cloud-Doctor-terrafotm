@@ -15,6 +15,21 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
+    # 환경변수들
+    env:
+      PGSQL_URL: ${{ secrets.PGSQL_URL }}
+      PGSQL_USERNAME: ${{ secrets.PGSQL_USERNAME }}
+      PGSQL_PASSWORD: ${{ secrets.PGSQL_PASSWORD }}
+      REDIS_HOST: ${{ secrets.REDIS_HOST }}
+      REDIS_PORT: ${{ secrets.REDIS_PORT }}
+      REDIS_PASSWORD: ""
+      ACCESS_TOKEN_EXPIRATION: ${{ secrets.ACCESS_TOKEN_EXPIRATION }}
+      REFRESH_TOKEN_EXPIRATION: ${{ secrets.REFRESH_TOKEN_EXPIRATION }}
+      COOKIE_SECURE: true
+      INFRAAUDIT_API_URL: ${{ secrets.INFRAAUDIT_API_URL }}
+      BASTION_PUBLIC_IP: ${{ secrets.BASTION_PUBLIC_IP }}
+      PRIVATE_IP: ${{ secrets.PRIVATE_IP }}
+      
     steps:
       # 2️⃣ 코드 체크아웃
       - name: Checkout repository
