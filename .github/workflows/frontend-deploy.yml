@@ -76,8 +76,29 @@ jobs:
             EOFKEY
             chmod 400 /home/ec2-user/private-cloud-doctor.pem
 
+      # ⭐ AMI 확인 및 생성
+      - name: Check existing AMI
+        id: check_ami
+        run: |
+          LATEST_AMI=$(aws ec2 describe-images \
+            --owners self \
+            --filters "Name=name,Values=clouddoctor-frontend-*" \
+            --query 'sort_by(Images, &CreationDate)[-1].ImageId' \
+            --region ap-northeast-2 \
+            --output text)
+          
+          if [ "$LATEST_AMI" != "None" ] && [ -n "$LATEST_AMI" ]; then
+            echo "USE_EXISTING=true" >> $GITHUB_OUTPUT
+            echo "AMI_ID=$LATEST_AMI" >> $GITHUB_OUTPUT
+            echo "✅ 기존 AMI 사용: $LATEST_AMI"
+          else
+            echo "USE_EXISTING=false" >> $GITHUB_OUTPUT
+            echo "🆕 기존 AMI 없음 - 배포 후 생성 예정"
+          fi
+
       # 8️⃣ ASG 스케일업 및 인스턴스 준비 대기
       - name: Scale up ASG and wait for instances
+        if: steps.check_ami.outputs.USE_EXISTING == 'false'
         run: |
           ASG_NAME="${{ secrets.FE_ASG_NAME }}"
 
@@ -106,6 +127,7 @@ jobs:
 
       # 9️⃣ ASG 인스턴스 IP 조회
       - name: Get ASG Instance IPs
+        if: steps.check_ami.outputs.USE_EXISTING == 'false'
         id: get_ips
         run: |
           ASG_NAME="${{ secrets.FE_ASG_NAME }}"
@@ -130,6 +152,7 @@ jobs:
 
       # 🔟 Bastion을 통한 배포
       - name: Deploy via Bastion
+        if: steps.check_ami.outputs.USE_EXISTING == 'false'
         uses: appleboy/ssh-action@v0.1.5
         with:
           host: ${{ secrets.BASTION_PUBLIC_IP }}
@@ -165,6 +188,7 @@ jobs:
 
       # ⭐ AMI 생성
       - name: Create AMI from deployed instance
+        if: steps.check_ami.outputs.USE_EXISTING == 'false'
         id: create_ami
         run: |
           ASG_NAME="${{ secrets.FE_ASG_NAME }}"
@@ -214,7 +238,13 @@ jobs:
       # 🔄 Launch Template 업데이트
       - name: Update Launch Template
         run: |
-          AMI_ID="${{ steps.create_ami.outputs.AMI_ID }}"
+          if [ "${{ steps.check_ami.outputs.USE_EXISTING }}" == "true" ]; then
+            AMI_ID="${{ steps.check_ami.outputs.AMI_ID }}"
+            echo "✅ 기존 AMI 사용: $AMI_ID"
+          else
+            AMI_ID="${{ steps.create_ami.outputs.AMI_ID }}"
+            echo "✅ 새 AMI 사용: $AMI_ID"
+          fi
           
           LAUNCH_TEMPLATE_NAME=$(aws ec2 describe-launch-templates \
             --region ap-northeast-2 \
