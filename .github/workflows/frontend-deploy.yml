@@ -109,6 +109,9 @@ jobs:
         id: get_ips
         run: |
           ASG_NAME="${{ secrets.FE_ASG_NAME }}"
+          if [ -z "$ASG_NAME" ]; then
+            ASG_NAME="clouddoctor-frontend-asg"
+          fi
           
           INSTANCE_IDS=$(aws autoscaling describe-auto-scaling-groups \
             --auto-scaling-group-names "$ASG_NAME" \
@@ -120,7 +123,7 @@ jobs:
             --instance-ids $INSTANCE_IDS \
             --region ap-northeast-2 \
             --query 'Reservations[*].Instances[*].PrivateIpAddress' \
-            --output text)
+            --output text | tr '\n' ' ')
           
           echo "SERVER_IPS=$SERVER_IPS" >> $GITHUB_OUTPUT
           echo "📍 배포 대상 IP: $SERVER_IPS"
