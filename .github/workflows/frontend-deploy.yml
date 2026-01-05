@@ -185,6 +185,27 @@ jobs:
           aws ec2 wait image-available --image-ids $AMI_ID --region ap-northeast-2
           echo "✅ AMI 사용 가능"
 
+      # 🗑️ 오래된 AMI 삭제 (3개만 유지)
+      - name: Delete old AMIs
+        run: |
+          echo "🗑️ 오래된 AMI 삭제 중..."
+          OLD_AMIS=$(aws ec2 describe-images \
+            --owners self \
+            --filters "Name=name,Values=clouddoctor-frontend-*" \
+            --query 'sort_by(Images, &CreationDate)[:-3].ImageId' \
+            --region ap-northeast-2 \
+            --output text)
+          
+          for AMI in $OLD_AMIS; do
+            echo "AMI 삭제: $AMI"
+            SNAPSHOTS=$(aws ec2 describe-images --image-ids $AMI --region ap-northeast-2 --query 'Images[0].BlockDeviceMappings[*].Ebs.SnapshotId' --output text)
+            aws ec2 deregister-image --image-id $AMI --region ap-northeast-2
+            for SNAP in $SNAPSHOTS; do
+              aws ec2 delete-snapshot --snapshot-id $SNAP --region ap-northeast-2 || true
+            done
+          done
+          echo "✅ 오래된 AMI 삭제 완료"
+
       # 🔄 Launch Template 업데이트
       - name: Update Launch Template
         run: |
