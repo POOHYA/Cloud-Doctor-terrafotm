@@ -6,7 +6,7 @@ on:
     branches:
       - main
 
-# 1️⃣ OIDC 권한 설정 추가
+# 1️⃣ OIDC 토큰 사용 권한 설정
 permissions:
   id-token: write
   contents: read
@@ -15,50 +15,48 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
-    # 환경변수들
+    # 2️⃣ 환경변수 설정 (Secrets에서 안전하게 가져옴)
     env:
       PGSQL_URL: ${{ secrets.PGSQL_URL }}
       PGSQL_USERNAME: ${{ secrets.PGSQL_USERNAME }}
       PGSQL_PASSWORD: ${{ secrets.PGSQL_PASSWORD }}
       REDIS_HOST: ${{ secrets.REDIS_HOST }}
       REDIS_PORT: ${{ secrets.REDIS_PORT }}
-      REDIS_PASSWORD: ""
+      REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
       ACCESS_TOKEN_EXPIRATION: ${{ secrets.ACCESS_TOKEN_EXPIRATION }}
       REFRESH_TOKEN_EXPIRATION: ${{ secrets.REFRESH_TOKEN_EXPIRATION }}
       COOKIE_SECURE: true
       INFRAAUDIT_API_URL: ${{ secrets.INFRAAUDIT_API_URL }}
-      BASTION_PUBLIC_IP: ${{ secrets.BASTION_PUBLIC_IP }}
-      PRIVATE_IP: ${{ secrets.PRIVATE_IP }}
-      
+
     steps:
-      # 2️⃣ 코드 체크아웃
+      # 3️⃣ 코드 체크아웃
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 3️⃣ AWS OIDC 인증 (추가됨)
+      # 4️⃣ AWS OIDC 인증 (Access Key 없이 Role Assume)
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ap-northeast-2
 
-      # 4️⃣ JAR 빌드
+      # 5️⃣ JAR 빌드
       - name: Build JAR
         working-directory: backend/CloudDoctorWeb
         run: ./gradlew clean build -x test
 
-      # 5️⃣ Docker 이미지 빌드
+      # 6️⃣ Docker 이미지 빌드
       - name: Build Docker image
         working-directory: backend/CloudDoctorWeb
         run: docker build -t cloud-doctor-backend -f Dockerfile .
 
-      # 6️⃣ Docker 이미지 TAR 저장
+      # 7️⃣ Docker 이미지 TAR 저장
       - name: Save Docker image to tar
         run: |
           docker save cloud-doctor-backend -o cloud-doctor-backend.tar
           chmod 644 cloud-doctor-backend.tar
 
-      # 7️⃣ Bastion 서버로 이미지 업로드
+      # 8️⃣ Bastion 서버로 이미지 업로드
       - name: Copy Docker image to Bastion
         uses: appleboy/scp-action@v0.1.5
         with:
@@ -68,35 +66,53 @@ jobs:
           source: "cloud-doctor-backend.tar"
           target: "/home/ubuntu/"
 
-      # 8️⃣ Bastion에서 Private EC2로 전송 및 배포
-      - name: Deploy on Private EC2 via Bastion
+      # 9️⃣ Bastion에서 2대의 Private EC2로 순차 배포
+      - name: Deploy on Multiple Private EC2 via Bastion
         uses: appleboy/ssh-action@v0.1.5
         with:
           host: ${{ secrets.BASTION_PUBLIC_IP }}
           username: ubuntu
           key: ${{ secrets.BASTION_SSH_KEY }}
           script: |
-            # Private EC2로 전송
-            scp -i /home/ubuntu/private-cloud-doctor.pem -o StrictHostKeyChecking=no /home/ubuntu/cloud-doctor-backend.tar ubuntu@${{ secrets.PRIVATE_IP }}:/home/ubuntu/
+            # ALB 뒤에 있는 서버들의 Private IP 리스트 정의
+            # GitHub Secrets에 BE_SERVER_1_IP, BE_SERVER_2_IP를 각각 등록하세요.
+            SERVER_IPS=("${{ secrets.BE_SERVER_1_IP }}" "${{ secrets.BE_SERVER_2_IP }}")
+            
+            for IP in "${SERVER_IPS[@]}"; do
+              echo "------------------------------------------------"
+              echo "🚀 타겟 서버 배포 시작: $IP"
+              echo "------------------------------------------------"
 
-            # Private EC2에서 배포 (EOF에 따옴표를 붙여 변수 치환 방지)
-            ssh -i /home/ubuntu/private-cloud-doctor.pem -o StrictHostKeyChecking=no ubuntu@${{ secrets.PRIVATE_IP }} << 'EOF'
-              sudo docker load -i /home/ubuntu/cloud-doctor-backend.tar
-              sudo docker stop cloud-doctor-backend || true
-              sudo docker rm cloud-doctor-backend || true
-              
-              sudo docker run -d -p 9090:9090 \
-                -e PGSQL_URL="${{ secrets.PGSQL_URL }}" \
-                -e PGSQL_USERNAME="${{ secrets.PGSQL_USERNAME }}" \
-                -e PGSQL_PASSWORD="${{ secrets.PGSQL_PASSWORD }}" \
-                -e REDIS_HOST="${{ secrets.REDIS_HOST }}" \
-                -e REDIS_PORT="${{ secrets.REDIS_PORT }}" \
-                -e REDIS_PASSWORD="" \
-                -e ACCESS_TOKEN_EXPIRATION="${{ secrets.ACCESS_TOKEN_EXPIRATION }}" \
-                -e REFRESH_TOKEN_EXPIRATION="${{ secrets.REFRESH_TOKEN_EXPIRATION }}" \
-                -e COOKIE_SECURE=true \
-                -e INFRAAUDIT_API_URL="${{ secrets.INFRAAUDIT_API_URL }}" \
-                --restart unless-stopped \
-                --name cloud-doctor-backend \
-                cloud-doctor-backend
+              # 1. Bastion에서 해당 Private EC2로 이미지 파일 전송
+              scp -i /home/ubuntu/private-cloud-doctor.pem -o StrictHostKeyChecking=no /home/ubuntu/cloud-doctor-backend.tar ubuntu@$IP:/home/ubuntu/
+
+              # 2. 해당 Private EC2에 원격 접속하여 컨테이너 갱신
+              ssh -i /home/ubuntu/private-cloud-doctor.pem -o StrictHostKeyChecking=no ubuntu@$IP << 'EOF'
+                # 기존 컨테이너 중지 및 이미지 로드
+                sudo docker load -i /home/ubuntu/cloud-doctor-backend.tar
+                sudo docker stop cloud-doctor-backend || true
+                sudo docker rm cloud-doctor-backend || true
+                
+                # 새 컨테이너 실행 (보안 처리된 환경변수 주입)
+                sudo docker run -d -p 9090:9090 \
+                  -e PGSQL_URL="${{ secrets.PGSQL_URL }}" \
+                  -e PGSQL_USERNAME="${{ secrets.PGSQL_USERNAME }}" \
+                  -e PGSQL_PASSWORD="${{ secrets.PGSQL_PASSWORD }}" \
+                  -e REDIS_HOST="${{ secrets.REDIS_HOST }}" \
+                  -e REDIS_PORT="${{ secrets.REDIS_PORT }}" \
+                  -e REDIS_PASSWORD="${{ secrets.REDIS_PASSWORD }}" \
+                  -e ACCESS_TOKEN_EXPIRATION="${{ secrets.ACCESS_TOKEN_EXPIRATION }}" \
+                  -e REFRESH_TOKEN_EXPIRATION="${{ secrets.REFRESH_TOKEN_EXPIRATION }}" \
+                  -e COOKIE_SECURE=true \
+                  -e INFRAAUDIT_API_URL="${{ secrets.INFRAAUDIT_API_URL }}" \
+                  --restart unless-stopped \
+                  --name cloud-doctor-backend \
+                  cloud-doctor-backend
+                
+                # 배포 후 잔여 tar 파일 삭제
+                rm -f /home/ubuntu/cloud-doctor-backend.tar
             EOF
+              echo "✅ 서버 배포 완료: $IP"
+              # ALB 헬스체크 및 안정화를 위해 5초 대기 후 다음 서버 진행
+              sleep 5
+            done
