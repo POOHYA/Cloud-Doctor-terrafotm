@@ -214,10 +214,14 @@ jobs:
       # 🔄 Launch Template 업데이트
       - name: Update Launch Template
         run: |
-          LAUNCH_TEMPLATE_NAME="clouddoctor-frontend"
           AMI_ID="${{ steps.create_ami.outputs.AMI_ID }}"
           
-          echo "🔄 Launch Template 업데이트 중..."
+          LAUNCH_TEMPLATE_NAME=$(aws ec2 describe-launch-templates \
+            --region ap-northeast-2 \
+            --query 'LaunchTemplates[?contains(LaunchTemplateName, `frontend`)].LaunchTemplateName' \
+            --output text)
+          
+          echo "🔄 Launch Template 업데이트 중: $LAUNCH_TEMPLATE_NAME"
           aws ec2 create-launch-template-version \
             --launch-template-name $LAUNCH_TEMPLATE_NAME \
             --source-version '$Latest' \
