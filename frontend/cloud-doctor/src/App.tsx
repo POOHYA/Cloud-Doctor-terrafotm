@@ -13,7 +13,6 @@ import MainPage from "./components/MainPage";
 import Guide from "./components/Guide";
 import { AdminPage } from "./components/Admin";
 import Checklist from "./components/Checklist";
-import Prowler from "./components/Prowler";
 import Login from "./components/Login";
 import MyPage from "./components/MyPage";
 import AuditCheck from "./components/AuditCheck";
